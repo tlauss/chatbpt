@@ -149,6 +149,7 @@ public class ClientView extends Application implements ClientObserver {
                 }
                 ListView<Message> messageArea = getOrCreateMessageArea(chatroom.getName());
                 messageArea.getItems().add(message);
+                messageArea.scrollTo(messageArea.getItems().size() - 1);
             } else {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Fehler");
@@ -309,6 +310,7 @@ public class ClientView extends Application implements ClientObserver {
                                 for (Message message : programController.getServer().getChatroom(roomName).getMessages()) {
                                     messageArea.getItems().add(message);
                                 }
+                                messageArea.scrollTo(messageArea.getItems().size() - 1);
                             }
                         } else {
                             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -361,6 +363,7 @@ public class ClientView extends Application implements ClientObserver {
                                 for (Message message : chatroom.getMessages()) {
                                     messageArea.getItems().add(message);
                                 }
+                                messageArea.scrollTo(messageArea.getItems().size() - 1);
 
                                 programController.getServer().updateChatListAndMessageArea(userName, chatroom.getName());
                             } else {
