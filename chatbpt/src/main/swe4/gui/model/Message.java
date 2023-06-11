@@ -2,19 +2,18 @@ package swe4.gui.model;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 import java.time.format.DateTimeFormatter;
 
 public class Message implements Serializable {
     private final User sender;
     private final String text;
-    private final LocalDateTime time;
+    private final Timestamp time;
 
     @Serial
     private static final long serialVersionUID = -1807385026432397002L;
 
-    public Message(User sender, String text, LocalDateTime time) {
+    public Message(User sender, String text, Timestamp time) {
         this.sender = sender;
         this.text = text;
         this.time = time;
@@ -25,8 +24,7 @@ public class Message implements Serializable {
     }
 
     public String getFormattedTime() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-        return time.format(formatter);
+        return time.toLocalDateTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss"));
     }
 
     public String getText() {
@@ -35,6 +33,10 @@ public class Message implements Serializable {
 
     @Override
     public String toString(){
-        return sender.getShortName() +  " am " + getFormattedTime() + "\n" + text;
+        return sender.getName() +  " am " + getFormattedTime() + ": " + text + "\n";
+    }
+
+    public Timestamp getTimestamp() {
+        return time;
     }
 }

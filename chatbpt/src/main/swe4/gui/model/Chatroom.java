@@ -22,6 +22,14 @@ public class Chatroom implements Serializable {
         this.messages = new ArrayList<>();
     }
 
+    public Chatroom(String name, User owner, ArrayList<User> users, ArrayList<User> bannedUsers, ArrayList<Message> messages) {
+        this.name = name;
+        this.owner = owner;
+        this.users = users;
+        this.bannedUsers = bannedUsers;
+        this.messages = messages;
+    }
+
     public String getName() {
         return name;
     }
@@ -30,21 +38,14 @@ public class Chatroom implements Serializable {
         return users;
     }
 
-    public void addUser(User user) {
-        users.add(user);
-    }
-
-    public void addMessage(Message message) {
-        messages.add(message);
-    }
-
     public ArrayList<User> getBannedUsers() {
         return bannedUsers;
     }
 
-    public ArrayList<Message> getMessages() {
-        return messages;
+    public boolean isBanned(User user) {
+        return bannedUsers.contains(user);
     }
+
 
     public User getOwner() {
         return owner;
@@ -52,49 +53,13 @@ public class Chatroom implements Serializable {
 
     @Override
     public String toString() {
-            return "Chatroom{" +
+            return "Chatroom: " +
                     "name='" + name + '\'' +
                     ", users=" + users +
                     ", bannedUsers=" + bannedUsers +
                     ", messages=" + messages +
-                    ", owner=" + owner +
+                    ", owner=" + owner + '\n' +
                     '}';
-    }
-
-    public boolean isBanned(String userName) {
-        for (User user : bannedUsers) {
-            if (user.getName().equals(userName)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void unbanUser(String userName) {
-        for (User user : bannedUsers) {
-            if (user.getName().equals(userName)) {
-                bannedUsers.remove(user);
-                return;
-            }
-        }
-    }
-
-    public void banUser(String userName) {
-        for (User user : users) {
-            if (user.getName().equals(userName)) {
-                bannedUsers.add(user);
-                return;
-            }
-        }
-    }
-
-    public void removeUser(User loggedInUser) {
-        for (User user : users) {
-            if (user.getName().equals(loggedInUser.getName())) {
-                users.remove(user);
-                return;
-            }
-        }
     }
 
     @Override

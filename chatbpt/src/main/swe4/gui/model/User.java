@@ -2,15 +2,12 @@ package swe4.gui.model;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 public class User implements Serializable {
-    private String name;
-    private String password;
+    private final String name;
+    private final String password;
     private final String shortName;
-    private final List<Chatroom> chatrooms;
     @Serial
     private static final long serialVersionUID = -3813103158851917744L;
 
@@ -18,7 +15,6 @@ public class User implements Serializable {
         this.name = name;
         this.password = password;
         this.shortName = shortName;
-        this.chatrooms = new ArrayList<>();
     }
 
     public String getName() {
@@ -27,14 +23,6 @@ public class User implements Serializable {
 
     public String getPassword() {
         return password;
-    }
-
-    public String getShortName() {
-        return shortName;
-    }
-
-    public List<Chatroom> getChatrooms() {
-        return chatrooms;
     }
 
     @Override
