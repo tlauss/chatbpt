@@ -3,7 +3,6 @@ package swe4.gui.controller;
 import javafx.stage.Stage;
 import swe4.gui.model.User;
 import swe4.gui.observer.ClientObserver;
-import swe4.gui.server.ChatServer;
 import swe4.gui.server.ServerService;
 import swe4.gui.view.ClientView;
 import swe4.gui.view.LoginView;
@@ -50,25 +49,29 @@ public class ProgramController {
 
     public void handleLogin() {
         try {
-            if (loginView.getUsername().isEmpty() || loginView.getPassword().isEmpty()) {
-                loginView.showErrorMessage("Please enter username and password");
+            if (server == null) {
+                loginView.showErrorMessage("Server not available");
             } else {
-                if (server.userExists(loginView.getUsername())) {
-                    if (server.passwordCorrect(loginView.getUsername(), loginView.getPassword())) {
-                        if (server.getLoggedInUsers().contains(server.getUser(loginView.getUsername()))) {
-                            loginView.showErrorMessage("User already logged in");
-                            return;
-                        }
-                        loggedInUser = server.getUser(loginView.getUsername());
-
-                        clientView.setProgramController(this);
-                        server.registerClient(clientObserver, loggedInUser);
-                        openClient();
-                    } else {
-                        loginView.showErrorMessage("Wrong password");
-                    }
+                if (loginView.getUsername().isEmpty() || loginView.getPassword().isEmpty()) {
+                    loginView.showErrorMessage("Please enter username and password");
                 } else {
-                    loginView.showErrorMessage("User does not exist");
+                    if (server.userExists(loginView.getUsername())) {
+                        if (server.passwordCorrect(loginView.getUsername(), loginView.getPassword())) {
+                            if (server.getLoggedInUsers().contains(server.getUser(loginView.getUsername()))) {
+                                loginView.showErrorMessage("User already logged in");
+                                return;
+                            }
+                            loggedInUser = server.getUser(loginView.getUsername());
+
+                            clientView.setProgramController(this);
+                            server.registerClient(clientObserver, loggedInUser);
+                            openClient();
+                        } else {
+                            loginView.showErrorMessage("Wrong password");
+                        }
+                    } else {
+                        loginView.showErrorMessage("User does not exist");
+                    }
                 }
             }
         } catch (RemoteException e) {
@@ -78,20 +81,24 @@ public class ProgramController {
 
     public void handleRegister() {
         try {
-            if (registerView.getUsername().isEmpty() || registerView.getShortName().isEmpty() || registerView.getPassword().isEmpty()) {
-                registerView.showErrorMessage("Please enter username, shortname and password");
-            } else if (!registerView.getPassword().equals(registerView.getRepeatPassword())) {
-                registerView.showErrorMessage("Passwords do not match");
+            if (server == null) {
+                registerView.showErrorMessage("Server not available");
             } else {
-                if (server.userExists(registerView.getUsername())) {
-                    registerView.showErrorMessage("User already exists");
+                if (registerView.getUsername().isEmpty() || registerView.getShortName().isEmpty() || registerView.getPassword().isEmpty()) {
+                    registerView.showErrorMessage("Please enter username, shortname and password");
+                } else if (!registerView.getPassword().equals(registerView.getRepeatPassword())) {
+                    registerView.showErrorMessage("Passwords do not match");
                 } else {
-                    server.addUser(registerView.getUsername(), registerView.getPassword(), registerView.getShortName());
-                    loggedInUser = server.getUser(registerView.getUsername());
+                    if (server.userExists(registerView.getUsername())) {
+                        registerView.showErrorMessage("User already exists");
+                    } else {
+                        server.addUser(registerView.getUsername(), registerView.getPassword(), registerView.getShortName());
+                        loggedInUser = server.getUser(registerView.getUsername());
 
-                    clientView.setProgramController(this);
-                    server.registerClient(clientObserver, loggedInUser);
-                    openClient();
+                        clientView.setProgramController(this);
+                        server.registerClient(clientObserver, loggedInUser);
+                        openClient();
+                    }
                 }
             }
         } catch (Exception e) {
