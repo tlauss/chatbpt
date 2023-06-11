@@ -87,7 +87,7 @@ public class ChatServer implements ServerService {
     }
 
     @Override
-    public void removeChatRoom(Chatroom chatroom) throws RemoteException {
+    public void removeChatroom(Chatroom chatroom) throws RemoteException {
         ArrayList<User> users = database.getChatroomUsers(chatroom.getName());
 
         database.removeChatroom(chatroom);

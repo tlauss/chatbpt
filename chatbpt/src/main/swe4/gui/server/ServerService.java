@@ -23,7 +23,7 @@ public interface ServerService extends Remote {
     ArrayList<User> getChatRoomUsers(String roomName) throws RemoteException;
     ArrayList<Message> getMessages(String chatroom) throws RemoteException;
     void addUserToChatroom(User user, String roomName) throws RemoteException;
-    void removeChatRoom(Chatroom chatroom) throws RemoteException;
+    void removeChatroom(Chatroom chatroom) throws RemoteException;
     void banUserFromChatroom(User user, String roomName) throws RemoteException;
     void unbanUserFromChatroom(User user, String roomName) throws RemoteException;
     ArrayList<User> getBannedUsersFromChatroom(String roomName) throws RemoteException;
