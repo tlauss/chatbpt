@@ -29,21 +29,6 @@ public class Database implements DatabaseService {
         return null;
     }
 
-    private ArrayList<User> getUsersFromResultSet(ResultSet resultSet) {
-        ArrayList<User> users = new ArrayList<>();
-        try {
-            while (resultSet.next()) {
-                String name = resultSet.getString("name");
-                String password = resultSet.getString("password");
-                String shortname = resultSet.getString("shortname");
-                users.add(new User(name, password, shortname));
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return users;
-    }
-
     @Override
     public void addUser(String username, String password, String shortname) {
         try (PreparedStatement statement = getConnection().prepareStatement("INSERT INTO User (name, password, shortname) VALUES (?, ?, ?)")) {
@@ -138,88 +123,6 @@ public class Database implements DatabaseService {
         }
     }
 
-    private ArrayList<Message> getMessagesFromChatroom(String name) {
-        try (PreparedStatement statement = getConnection().prepareStatement(
-                "SELECT * " +
-                    "FROM Message " +
-                        "INNER JOIN User ON Message.user_id = User.uid " +
-                        "INNER JOIN Chatroom ON Message.chatroom_name = Chatroom.name " +
-                    "WHERE Chatroom.name = ?"))
-        {
-            statement.setString(1, name);
-            ResultSet resultSet = statement.executeQuery();
-
-            ArrayList<Message> messages = new ArrayList<>();
-
-            while (resultSet.next()) {
-                User user = new User(resultSet.getString("name"),
-                                     resultSet.getString("password"),
-                                     resultSet.getString("shortname"));
-                Message message = new Message(user,
-                                              resultSet.getString("text"),
-                                              resultSet.getTimestamp("timestamp"));
-
-                messages.add(message);
-            }
-
-            return messages;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private ArrayList<User> getUsersFromChatroom(String name) {
-        try (PreparedStatement statement = getConnection().prepareStatement(
-                "SELECT * " +
-                        "FROM User " +
-                        "INNER JOIN User_Chatroom ON User.uid = User_Chatroom.user_id " +
-                        "INNER JOIN Chatroom ON User_Chatroom.chatroom_name = Chatroom.name " +
-                    "WHERE Chatroom.name = ?"))
-        {
-            statement.setString(1, name);
-            ResultSet resultSet = statement.executeQuery();
-
-            return getUsersFromResultSet(resultSet);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    private ArrayList<User> getBannedUsersFromChatroom(String name) {
-        try (PreparedStatement statement = getConnection().prepareStatement(
-                "SELECT * " +
-                        "FROM User " +
-                        "INNER JOIN BannedUser_Chatroom ON User.uid = BannedUser_Chatroom.user_id " +
-                        "INNER JOIN Chatroom ON BannedUser_Chatroom.chatroom_name = Chatroom.name " +
-                        "WHERE Chatroom.name = ?"))
-        {
-            statement.setString(1, name);
-            ResultSet resultSet = statement.executeQuery();
-
-            return getUsersFromResultSet(resultSet);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private User getUserFromId(int ownerId) {
-        try (PreparedStatement statement = getConnection().prepareStatement(
-                "SELECT * FROM User WHERE uid = ?")) {
-            statement.setInt(1, ownerId);
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                return new User(resultSet.getString("name"),
-                                resultSet.getString("password"),
-                                resultSet.getString("shortname"));
-            } else {
-                return null;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Override
     public void addChatroom(Chatroom chatroom, String user) {
         try (PreparedStatement statement = getConnection().prepareStatement(
@@ -253,14 +156,39 @@ public class Database implements DatabaseService {
 
     @Override
     public void removeChatroom(Chatroom chatroom) {
-        try (PreparedStatement statement = getConnection().prepareStatement(
-                "DELETE FROM Chatroom WHERE name = ?")) {
-            statement.setString(1, chatroom.getName());
-            statement.executeUpdate();
+        try (Connection connection = getConnection()) {
+            // Remove banned users from the chatroom
+            try (PreparedStatement deleteBannedUsers = connection.prepareStatement(
+                    "DELETE FROM BannedUser_Chatroom WHERE chatroom_name = ?")) {
+                deleteBannedUsers.setString(1, chatroom.getName());
+                deleteBannedUsers.executeUpdate();
+            }
+
+            // Remove user-chatroom associations
+            try (PreparedStatement deleteUserChatroom = connection.prepareStatement(
+                    "DELETE FROM User_Chatroom WHERE chatroom_name = ?")) {
+                deleteUserChatroom.setString(1, chatroom.getName());
+                deleteUserChatroom.executeUpdate();
+            }
+
+            // Remove messages from the chatroom
+            try (PreparedStatement deleteMessages = connection.prepareStatement(
+                    "DELETE FROM Message WHERE chatroom_name = ?")) {
+                deleteMessages.setString(1, chatroom.getName());
+                deleteMessages.executeUpdate();
+            }
+
+            // Remove the chatroom
+            try (PreparedStatement deleteChatroom = connection.prepareStatement(
+                    "DELETE FROM Chatroom WHERE name = ?")) {
+                deleteChatroom.setString(1, chatroom.getName());
+                deleteChatroom.executeUpdate();
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
+
 
     @Override
     public boolean chatroomExists(String roomName) {
@@ -373,6 +301,104 @@ public class Database implements DatabaseService {
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
                 return resultSet.getString("uid");
+            } else {
+                return null;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ArrayList<User> getUsersFromResultSet(ResultSet resultSet) {
+        ArrayList<User> users = new ArrayList<>();
+        try {
+            while (resultSet.next()) {
+                String name = resultSet.getString("name");
+                String password = resultSet.getString("password");
+                String shortname = resultSet.getString("shortname");
+                users.add(new User(name, password, shortname));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return users;
+    }
+
+    private ArrayList<User> getUsersFromChatroom(String name) {
+        try (PreparedStatement statement = getConnection().prepareStatement(
+                "SELECT * " +
+                        "FROM User " +
+                        "INNER JOIN User_Chatroom ON User.uid = User_Chatroom.user_id " +
+                        "INNER JOIN Chatroom ON User_Chatroom.chatroom_name = Chatroom.name " +
+                    "WHERE Chatroom.name = ?"))
+        {
+            statement.setString(1, name);
+            ResultSet resultSet = statement.executeQuery();
+
+            return getUsersFromResultSet(resultSet);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    @Override
+    public ArrayList<User> getBannedUsersFromChatroom(String name) {
+        try (PreparedStatement statement = getConnection().prepareStatement(
+                "SELECT * " +
+                        "FROM User " +
+                        "INNER JOIN BannedUser_Chatroom ON User.uid = BannedUser_Chatroom.user_id " +
+                        "INNER JOIN Chatroom ON BannedUser_Chatroom.chatroom_name = Chatroom.name " +
+                        "WHERE Chatroom.name = ?"))
+        {
+            statement.setString(1, name);
+            ResultSet resultSet = statement.executeQuery();
+
+            return getUsersFromResultSet(resultSet);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ArrayList<Message> getMessagesFromChatroom(String name) {
+        try (PreparedStatement statement = getConnection().prepareStatement(
+                "SELECT * " +
+                        "FROM Message " +
+                        "INNER JOIN User ON Message.user_id = User.uid " +
+                        "INNER JOIN Chatroom ON Message.chatroom_name = Chatroom.name " +
+                        "WHERE Chatroom.name = ?"))
+        {
+            statement.setString(1, name);
+            ResultSet resultSet = statement.executeQuery();
+
+            ArrayList<Message> messages = new ArrayList<>();
+
+            while (resultSet.next()) {
+                User user = new User(resultSet.getString("name"),
+                        resultSet.getString("password"),
+                        resultSet.getString("shortname"));
+                Message message = new Message(user,
+                        resultSet.getString("text"),
+                        resultSet.getTimestamp("timestamp"));
+
+                messages.add(message);
+            }
+
+            return messages;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private User getUserFromId(int ownerId) {
+        try (PreparedStatement statement = getConnection().prepareStatement(
+                "SELECT * FROM User WHERE uid = ?")) {
+            statement.setInt(1, ownerId);
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                return new User(resultSet.getString("name"),
+                        resultSet.getString("password"),
+                        resultSet.getString("shortname"));
             } else {
                 return null;
             }

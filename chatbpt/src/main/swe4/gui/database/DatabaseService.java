@@ -15,6 +15,7 @@ public interface DatabaseService {
     ArrayList<Chatroom> getChatrooms();
     void addChatroom(Chatroom chatroom, String user);
     Chatroom getChatroom(String chatroom);
+    ArrayList<User> getChatroomUsers(String chatroom);
     void removeChatroom(Chatroom chatroom);
     boolean chatroomExists(String chatroom);
     void addUserToChatroom(User user, String chatroom);
@@ -22,6 +23,6 @@ public interface DatabaseService {
     void removeUserFromChatroom(User loggedInUser, String chatroom);
     void banUserFromChatroom(User user, String chatroom);
     void unbanUserFromChatroom(User user, String chatroom);
-    ArrayList<User> getChatroomUsers(String chatroom);
+    ArrayList<User> getBannedUsersFromChatroom(String chatroom);
     ArrayList<Message> getMessages(String chatroom);
 }
