@@ -1,6 +1,5 @@
 package swe4.gui.server;
 
-//import swe4.gui.backend.MockDatabase;
 import swe4.gui.database.Database;
 import swe4.gui.database.DatabaseService;
 import swe4.gui.model.Chatroom;
@@ -15,7 +14,6 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class ChatServer implements ServerService {
@@ -23,7 +21,7 @@ public class ChatServer implements ServerService {
     private final ArrayList<ClientObserver> clientObservers = new ArrayList<>();
     private final ArrayList<User> loggedInUsers = new ArrayList<>();
 
-    public static void main(String[] args) throws RemoteException, MalformedURLException, SQLException {
+    public static void main(String[] args) throws RemoteException, MalformedURLException {
         int registryPort = Registry.REGISTRY_PORT;
         String serverHostName = "localhost";
         if (args.length > 0) {
@@ -46,7 +44,6 @@ public class ChatServer implements ServerService {
         Naming.rebind(internalUrl, serviceStub);
 
         database = new Database(connectionString, userName);
-//        database = MockDatabase.getInstance();
 
         System.out.printf("Service available at %s%n", externalUrl);
     }
@@ -91,24 +88,17 @@ public class ChatServer implements ServerService {
 
     @Override
     public void removeChatRoom(Chatroom chatroom) throws RemoteException {
-        database.removeChatroom(chatroom);
+        ArrayList<User> users = database.getChatroomUsers(chatroom.getName());
 
+        database.removeChatroom(chatroom);
         for (ClientObserver client : clientObservers) {
-            client.updateChatroomsOnRemove(chatroom);
+            client.updateChatroomsOnRemove(chatroom, users);
         }
     }
 
     @Override
     public boolean chatroomExists(String chatroom) throws RemoteException {
         return database.chatroomExists(chatroom);
-    }
-
-    @Override
-    public void removeUserFromChatroom(User loggedInUser, String chatroom) throws RemoteException {
-        database.removeUserFromChatroom(loggedInUser, chatroom);
-        for (ClientObserver client : clientObservers) {
-            client.updateChatroomsOnLeave(database.getChatroom(chatroom), loggedInUser);
-        }
     }
 
     @Override
@@ -127,6 +117,11 @@ public class ChatServer implements ServerService {
         for (ClientObserver client : clientObservers) {
             client.updateChatroomsOnUnban(database.getChatroom(chatroom), user);
         }
+    }
+
+    @Override
+    public ArrayList<User> getBannedUsersFromChatroom(String roomName) throws RemoteException {
+        return database.getBannedUsersFromChatroom(roomName);
     }
 
     @Override
