@@ -7,6 +7,7 @@ import swe4.gui.observer.ClientObserver;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.List;
 
 public interface ServerService extends Remote {
@@ -14,8 +15,7 @@ public interface ServerService extends Remote {
     User getUser(String username) throws RemoteException;
     boolean userExists(String user) throws RemoteException;
     boolean passwordCorrect(String user, String password) throws RemoteException;
-    List<User> getUsers() throws RemoteException;
-    void addChatroom(Chatroom chatroom) throws RemoteException;
+    void addChatroom(Chatroom chatroom, String userName) throws RemoteException;
     void updateChatListAndMessageArea(String userName, String chatroomName) throws RemoteException;
     boolean chatroomExists(String roomName) throws RemoteException;
     void addMessage(String selectedChat, Message message) throws RemoteException;
@@ -30,5 +30,5 @@ public interface ServerService extends Remote {
     void unbanUserFromChatroom(User user, String roomName) throws RemoteException;
     void registerClient(ClientObserver client, User user) throws RemoteException;
     void unregisterClient(ClientObserver client, User user) throws RemoteException;
-    List<User> getLoggedInUsers() throws RemoteException;
+    ArrayList<User> getLoggedInUsers() throws RemoteException;
 }
