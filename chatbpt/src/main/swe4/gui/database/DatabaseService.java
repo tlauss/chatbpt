@@ -6,7 +6,7 @@ import swe4.gui.model.User;
 
 import java.util.ArrayList;
 
-interface DatabaseService {
+public interface DatabaseService {
     void addUser(String user, String password, String shortname);
     User getUser(String user);
     User getUser(int id);
