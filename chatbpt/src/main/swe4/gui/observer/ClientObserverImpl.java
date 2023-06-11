@@ -6,6 +6,7 @@ import swe4.gui.model.User;
 import swe4.gui.view.ClientView;
 
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 
 public class ClientObserverImpl implements ClientObserver {
 
@@ -32,13 +33,8 @@ public class ClientObserverImpl implements ClientObserver {
     }
 
     @Override
-    public void updateChatroomsOnLeave(Chatroom chatroom, User user) throws RemoteException {
-        view.updateChatroomsOnLeave(chatroom, user);
-    }
-
-    @Override
-    public void updateChatroomsOnRemove(Chatroom chatroom) throws RemoteException {
-        view.updateChatroomsOnRemove(chatroom);
+    public void updateChatroomsOnRemove(Chatroom chatroom, ArrayList<User> users) throws RemoteException {
+        view.updateChatroomsOnRemove(chatroom, users);
     }
 
     @Override
