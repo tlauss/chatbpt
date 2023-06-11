@@ -8,6 +8,7 @@ import swe4.gui.model.Message;
 import swe4.gui.server.ServerService;
 
 import java.rmi.RemoteException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,7 +55,7 @@ public class ServerTests {
 
     @Test
     public void testIfPasswordIsCorrect() throws RemoteException {
-        assertTrue(server.passwordCorrect("testUser", "testPassword"));
+        assertTrue(server.passwordCorrect("testUser", "tU"));
     }
 
     @Test
@@ -64,7 +65,8 @@ public class ServerTests {
 
     @Test
     public void chatroomIsNotNullAfterAddChatroom() throws RemoteException {
-        server.addChatroom(new Chatroom("testChatroom", server.getUser("testUser")));
+        if (server.chatroomExists("testChatroom")) server.removeChatroom(server.getChatroom("testChatroom"));
+        server.addChatroom(new Chatroom("testChatroom", server.getUser("testUser")), "testUser");
         assertNotNull(server.getChatroom("testChatroom"));
     }
 
@@ -91,7 +93,7 @@ public class ServerTests {
 
     @Test
     public void getMessages_returnsMessages() throws RemoteException {
-        server.addMessage("testChatroom", new Message(server.getUser("testUser"), "testMessage", LocalDateTime.now()));
+        server.addMessage("testChatroom", new Message(server.getUser("testUser"), "testMessage", Timestamp.valueOf(LocalDateTime.now())));
         assertFalse(server.getMessages("testChatroom").isEmpty());
     }
 }
