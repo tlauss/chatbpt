@@ -17,7 +17,9 @@ import swe4.gui.model.User;
 import swe4.gui.observer.ClientObserver;
 
 import java.rmi.RemoteException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +31,8 @@ public class ClientView extends Application implements ClientObserver {
     private ListView<String> searchResultList;
     private ListView<String> systemMessageList;
     transient private ProgramController programController;
+    private static final int WINDOW_WIDTH = 800;
+    private static final int WINDOW_HEIGHT = 600;
 
     public void setProgramController(ProgramController programController) {
         this.programController = programController;
@@ -36,7 +40,7 @@ public class ClientView extends Application implements ClientObserver {
 
     @Override
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("Client View");
+        primaryStage.setTitle("Client View: " + programController.getLoggedInUser().getName());
 
         MenuBar menuBar = createMenuBar();
         chatList = createChatList();
@@ -67,9 +71,9 @@ public class ClientView extends Application implements ClientObserver {
         inputBox.setAlignment(Pos.CENTER);
         inputBox.getChildren().addAll(inputField, sendButton);
 
-        Scene scene = new Scene(root, 1200, 800);
-        primaryStage.setMinWidth(800);
-        primaryStage.setMinHeight(600);
+        Scene scene = new Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT);
+        primaryStage.setMinWidth(WINDOW_WIDTH);
+        primaryStage.setMinHeight(WINDOW_HEIGHT);
         primaryStage.setScene(scene);
         primaryStage.show();
 
@@ -107,27 +111,20 @@ public class ClientView extends Application implements ClientObserver {
                     alert.setHeaderText("Es wurde kein Chatroom ausgewählt");
                     alert.setContentText("Sie können keine Nachrichten senden, wenn kein Chatroom ausgewählt ist");
                     alert.showAndWait();
-                    return;
-                }
-
-                if (chatroom.getBannedUsers().contains(programController.getLoggedInUser())) {
+                } else if (programController.getServer().getBannedUsersFromChatroom(selectedChat).contains(programController.getLoggedInUser())) {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Fehler");
                     alert.setHeaderText("Sie können keine Nachrichten in diesen Chatroom senden");
                     alert.setContentText("Sie wurden aus diesem Chatroom verbannt");
                     alert.showAndWait();
-                    return;
-                }
-
-                if (selectedChat != null) {
+                } else if (selectedChat != null) {
                     String text = inputField.getText().trim();
                     if (!text.isEmpty()) {
-                        LocalDateTime now = LocalDateTime.now();
+                        Timestamp now = Timestamp.valueOf(LocalDateTime.now());
                         Message message = new Message(programController.getLoggedInUser(), text, now);
                         try {
                             programController.getServer().addMessage(selectedChat, message);
                         } catch (RemoteException e) {
-                            e.printStackTrace();
                             throw new RuntimeException(e);
                         }
 
@@ -136,91 +133,6 @@ public class ClientView extends Application implements ClientObserver {
                 }
             } catch (RemoteException e) {
                 throw new RuntimeException(e);
-            }
-        });
-    }
-
-    @Override
-    public void updateMessagesOnNewMessage(Chatroom chatroom, Message message) {
-        Platform.runLater(() -> {
-            if (!chatroom.getBannedUsers().contains(programController.getLoggedInUser())) {
-                if (!chatroom.getUsers().contains(programController.getLoggedInUser())) {
-                    return;
-                }
-                ListView<Message> messageArea = getOrCreateMessageArea(chatroom.getName());
-                messageArea.getItems().add(message);
-                messageArea.scrollTo(messageArea.getItems().size() - 1);
-            } else {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Fehler");
-                alert.setHeaderText("Sie können keine Nachrichten in diesen Chatroom senden");
-                alert.setContentText("Sie wurden aus diesem Chatroom verbannt");
-                alert.showAndWait();
-            }
-        });
-
-    }
-
-    @Override
-    public void updateChatRoomsOnJoin(Chatroom chatroom, User user) throws RemoteException {
-        Platform.runLater(() -> {
-            if (chatroom.getUsers().contains(programController.getLoggedInUser())) {
-                systemMessageList.getItems().add(user.getName() + " ist dem Chatroom " + chatroom.getName() + " beigetreten");
-            }
-        });
-    }
-
-    @Override
-    public void updateChatroomsOnBan(Chatroom chatroom, User user) throws RemoteException {
-        Platform.runLater(() -> {
-            if (chatroom.getUsers().contains(programController.getLoggedInUser())) {
-                systemMessageList.getItems().add(user.getName() + " wurde aus dem Chatroom " + chatroom.getName() + " verbannt");
-            }
-        });
-    }
-
-    @Override
-    public void updateChatroomsOnUnban(Chatroom chatroom, User user) throws RemoteException {
-        Platform.runLater(() -> {
-            if (chatroom.getUsers().contains(programController.getLoggedInUser())) {
-                systemMessageList.getItems().add(user.getName() + " wurde im Chatroom " + chatroom.getName() + " entbannt");
-            }
-        });
-    }
-
-    @Override
-    public void updateChatroomsOnLeave(Chatroom chatroom, User user) throws RemoteException {
-        Platform.runLater(() -> {
-            if (chatroom.getUsers().contains(programController.getLoggedInUser())) {
-                systemMessageList.getItems().add(user.getName() + " hat den Chatroom " + chatroom.getName() + " verlassen");
-            }
-        });
-    }
-
-    @Override
-    public void updateChatroomsOnRemove(Chatroom chatroom) throws RemoteException {
-        Platform.runLater(() -> {
-            if (chatroom.getUsers().contains(programController.getLoggedInUser())) {
-                systemMessageList.getItems().add("Der Chatroom " + chatroom.getName() + " wurde gelöscht");
-            }
-        });
-    }
-
-    @Override
-    public void updateChatListAndMessageArea(String userName, String chatroomName) throws RemoteException {
-        Platform.runLater(() -> {
-            if (userName.equals(programController.getLoggedInUser().getName())) {
-                chatList.getItems().add(chatroomName);
-                chatList.getSelectionModel().select(chatroomName);
-                ListView<Message> messageArea = getOrCreateMessageArea(chatroomName);
-                try {
-                    Chatroom chatroom = programController.getServer().getChatroom(chatroomName);
-                    for (Message message : chatroom.getMessages()) {
-                        messageArea.getItems().add(message);
-                    }
-                } catch (RemoteException e) {
-                    throw new RuntimeException(e);
-                }
             }
         });
     }
@@ -236,12 +148,7 @@ public class ClientView extends Application implements ClientObserver {
         try {
             for (Chatroom chatroom : programController.getServer().getChatrooms()) {
                 if (chatroom.getUsers().contains(programController.getLoggedInUser())) {
-                    chatList.getItems().add(chatroom.getName());
-
-                    ListView<Message> messageArea = getOrCreateMessageArea(chatroom.getName());
-                    for (Message message : chatroom.getMessages()) {
-                        messageArea.getItems().add(message);
-                    }
+                    addChatroomAndMessagesToView(chatroom.getName());
                 }
             }
         } catch (RemoteException e) {
@@ -252,7 +159,6 @@ public class ClientView extends Application implements ClientObserver {
     private MenuBar createMenuBar() {
         Menu chatRoomMenu = new Menu("Chat-Raum");
         Menu chatPrivateMenu = new Menu("Privat-Chat");
-        Menu testNotificationMenu = new Menu("Test-Benachrichtigung");
 
         MenuItem newChatRoomItem = new MenuItem("Neuer Chatraum");
         newChatRoomItem.setOnAction(event -> {
@@ -263,14 +169,41 @@ public class ClientView extends Application implements ClientObserver {
 
             Optional<String> result = dialog.showAndWait();
             result.ifPresent(roomName -> {
-                Chatroom chatroom = new Chatroom(roomName, programController.getLoggedInUser());
-                try {
-                    programController.getServer().addChatroom(chatroom);
-                    programController.getServer().addUserToChatroom(programController.getLoggedInUser(), roomName);
-                } catch (RemoteException e) {
-                    throw new RuntimeException(e);
+                if (roomName.isEmpty()) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Fehler");
+                    alert.setHeaderText("Es wurde kein Name eingegeben");
+                    alert.setContentText("Sie müssen einen Namen für den Chatraum eingeben");
+                    alert.showAndWait();
+                } else if (roomName.contains("Privat")) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Fehler");
+                    alert.setHeaderText("Der Name des Chatraums darf nicht 'Privat' enthalten");
+                    alert.setContentText("Sie müssen einen anderen Namen für den Chatraum eingeben");
+                    alert.showAndWait();
+                } else {
+                    try {
+                        if (programController.getServer().chatroomExists(roomName)) {
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("Fehler");
+                            alert.setHeaderText("Der Chatraum existiert bereits");
+                            alert.setContentText("Sie müssen einen anderen Namen für den Chatraum eingeben");
+                            alert.showAndWait();
+
+                        } else {
+                            Chatroom chatroom = new Chatroom(roomName, programController.getLoggedInUser());
+                            try {
+                                programController.getServer().addChatroom(chatroom, programController.getLoggedInUser().getName());
+                                programController.getServer().addUserToChatroom(programController.getLoggedInUser(), roomName);
+                            } catch (RemoteException e) {
+                                throw new RuntimeException(e);
+                            }
+                            chatList.getItems().add(roomName);
+                        }
+                    } catch (RemoteException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
-                chatList.getItems().add(roomName);
             });
         });
 
@@ -303,14 +236,7 @@ public class ClientView extends Application implements ClientObserver {
                                 alert.showAndWait();
                             } else {
                                 programController.getServer().addUserToChatroom(programController.getLoggedInUser(), roomName);
-                                chatList.getItems().add(roomName);
-                                chatList.getSelectionModel().select(roomName);
-                                ListView<Message> messageArea = getOrCreateMessageArea(roomName);
-
-                                for (Message message : programController.getServer().getChatroom(roomName).getMessages()) {
-                                    messageArea.getItems().add(message);
-                                }
-                                messageArea.scrollTo(messageArea.getItems().size() - 1);
+                                addChatroomAndMessagesToView(roomName);
                             }
                         } else {
                             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -352,18 +278,11 @@ public class ClientView extends Application implements ClientObserver {
                                 String chatroomName = "Privat: " + programController.getLoggedInUser().getName() +
                                         " und " + userName;
                                 Chatroom chatroom = new Chatroom(chatroomName, programController.getLoggedInUser());
-                                programController.getServer().addChatroom(chatroom);
+                                programController.getServer().addChatroom(chatroom, userName);
                                 programController.getServer().addUserToChatroom(programController.getLoggedInUser(), chatroom.getName());
                                 programController.getServer().addUserToChatroom(programController.getServer().getUser(userName), chatroom.getName());
 
-                                chatList.getItems().add(chatroomName);
-                                chatList.getSelectionModel().select(chatroomName);
-
-                                ListView<Message> messageArea = getOrCreateMessageArea(chatroomName);
-                                for (Message message : chatroom.getMessages()) {
-                                    messageArea.getItems().add(message);
-                                }
-                                messageArea.scrollTo(messageArea.getItems().size() - 1);
+                                addChatroomAndMessagesToView(chatroomName);
 
                                 programController.getServer().updateChatListAndMessageArea(userName, chatroom.getName());
                             } else {
@@ -396,24 +315,28 @@ public class ClientView extends Application implements ClientObserver {
             });
         });
 
-        MenuItem showNotificationItem = new MenuItem("Benachrichtigung anzeigen");
-        testNotificationMenu.setOnAction(event -> {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Benachrichtigung");
-            alert.setHeaderText("Benachrichtigung");
-            alert.setContentText("Dies ist eine Benachrichtigung");
-
-            alert.showAndWait();
-        });
-
         chatRoomMenu.getItems().addAll(newChatRoomItem, joinChatRoomItem);
         chatPrivateMenu.getItems().addAll(newPrivateChatItem);
-        testNotificationMenu.getItems().addAll(showNotificationItem);
 
         MenuBar menuBar = new MenuBar();
-        menuBar.getMenus().addAll(chatRoomMenu, chatPrivateMenu, testNotificationMenu);
+        menuBar.getMenus().addAll(chatRoomMenu, chatPrivateMenu);
 
         return menuBar;
+    }
+
+    private void addChatroomAndMessagesToView(String chatroomName) throws RemoteException {
+        chatList.getItems().add(chatroomName);
+        chatList.getSelectionModel().select(chatroomName);
+
+        addMessagesToView(chatroomName);
+    }
+
+    private void addMessagesToView(String chatroomName) throws RemoteException {
+        ListView<Message> messageArea = getOrCreateMessageArea(chatroomName);
+        for (Message message : programController.getServer().getMessages(chatroomName)) {
+            messageArea.getItems().add(message);
+        }
+        messageArea.scrollTo(messageArea.getItems().size() - 1);
     }
 
     private ListView<String> createChatList() {
@@ -428,7 +351,7 @@ public class ClientView extends Application implements ClientObserver {
                 Chatroom selectedChatToRemove = programController.getServer().getChatroom(selectedChat);
 
                 if (selectedChatToRemove.getOwner().equals(programController.getLoggedInUser())) {
-                    programController.getServer().removeChatRoom(selectedChatToRemove);
+                    programController.getServer().removeChatroom(selectedChatToRemove);
 
                     chatList.getItems().remove(selectedChat);
                     chatMessageAreas.remove(selectedChat);
@@ -441,7 +364,7 @@ public class ClientView extends Application implements ClientObserver {
                     alert.showAndWait();
                 }
             } catch (RemoteException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
 
         });
@@ -464,18 +387,17 @@ public class ClientView extends Application implements ClientObserver {
 
                     if (chatroom.getOwner().equals(programController.getLoggedInUser())) {
                         boolean userExists = false;
-                        for (User user : chatroom.getUsers()) {
+
+                        for (User user : programController.getServer().getChatRoomUsers(selectedChat)) {
                             if (user.getName().equals(userName)) {
-                                if (chatroom.isBanned(userName)) {
+                                if (programController.getServer().getBannedUsersFromChatroom(selectedChat).contains(user)) {
                                     programController.getServer().unbanUserFromChatroom(userToBan, selectedChat);
-                                    systemMessageList.getItems().add(userName + " wurde aus dem Chatraum " + selectedChat + " entbannt");
                                 } else {
                                     programController.getServer().banUserFromChatroom(userToBan, selectedChat);
-                                    systemMessageList.getItems().add(userName + " wurde aus dem Chatraum " + selectedChat + " verbannt");
                                 }
-                                userExists = true;
-                                break;
                             }
+                            userExists = true;
+                            break;
                         }
 
                         if (!userExists) {
@@ -493,25 +415,11 @@ public class ClientView extends Application implements ClientObserver {
                         alert.showAndWait();
                     }
                 } catch (RemoteException e) {
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
             });
         });
         contextMenu.getItems().add(banUser);
-
-        MenuItem leaveChat = new MenuItem("Leave Chat");
-        leaveChat.setOnAction(event -> {
-            String selectedChat = chatList.getSelectionModel().getSelectedItem();
-            try {
-                programController.getServer().removeUserFromChatroom(programController.getLoggedInUser(), selectedChat);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-            chatList.getItems().remove(selectedChat);
-            chatMessageAreas.remove(selectedChat);
-        });
-
-        contextMenu.getItems().add(leaveChat);
 
         chatList.setContextMenu(contextMenu);
 
@@ -612,5 +520,89 @@ public class ClientView extends Application implements ClientObserver {
                 setGraphic(vBox);
             }
         }
+    }
+
+
+    @Override
+    public void updateMessagesOnNewMessage(Chatroom chatroom, Message message) {
+        Platform.runLater(() -> {
+            try {
+                if (!programController.getServer().getChatRoomUsers(chatroom.getName()).contains(programController.getLoggedInUser())) {
+                    return;
+                }
+                ListView<Message> messageArea = getOrCreateMessageArea(chatroom.getName());
+                messageArea.getItems().add(message);
+                messageArea.scrollTo(messageArea.getItems().size() - 1);
+            } catch (RemoteException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Override
+    public void updateChatRoomsOnJoin(Chatroom chatroom, User user) throws RemoteException {
+        Platform.runLater(() -> {
+            try {
+                if (programController.getServer().getChatRoomUsers(chatroom.getName()).contains(programController.getLoggedInUser())) {
+                    systemMessageList.getItems().add(user.getName() + " ist dem Chatroom " + chatroom.getName() + " beigetreten");
+                    systemMessageList.scrollTo(systemMessageList.getItems().size() - 1);
+                }
+            } catch (RemoteException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Override
+    public void updateChatroomsOnBan(Chatroom chatroom, User user) throws RemoteException {
+        Platform.runLater(() -> {
+            try {
+                if (programController.getServer().getChatRoomUsers(chatroom.getName()).contains(programController.getLoggedInUser())) {
+                    systemMessageList.getItems().add(user.getName() + " wurde aus dem Chatroom " + chatroom.getName() + " verbannt");
+                    systemMessageList.scrollTo(systemMessageList.getItems().size() - 1);
+                }
+            } catch (RemoteException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Override
+    public void updateChatroomsOnUnban(Chatroom chatroom, User user) throws RemoteException {
+        Platform.runLater(() -> {
+            try {
+                if (programController.getServer().getChatRoomUsers(chatroom.getName()).contains(programController.getLoggedInUser())) {
+                    systemMessageList.getItems().add(user.getName() + " wurde im Chatroom " + chatroom.getName() + " entbannt");
+                    systemMessageList.scrollTo(systemMessageList.getItems().size() - 1);
+                }
+            } catch (RemoteException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Override
+    public void updateChatroomsOnRemove(Chatroom chatroom, ArrayList<User> users) throws RemoteException {
+        Platform.runLater(() -> {
+            if (users.contains(programController.getLoggedInUser())) {
+                chatMessageAreas.remove(chatroom.getName());
+                chatList.getItems().remove(chatroom.getName());
+                systemMessageList.getItems().add("Der Chatroom " + chatroom.getName() + " wurde gelöscht");
+                systemMessageList.scrollTo(systemMessageList.getItems().size() - 1);
+            }
+        });
+    }
+
+    @Override
+    public void updateChatListAndMessageArea(String userName, String chatroomName) throws RemoteException {
+        Platform.runLater(() -> {
+            if (userName.equals(programController.getLoggedInUser().getName())) {
+                try {
+                    addChatroomAndMessagesToView(chatroomName);
+                } catch (RemoteException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
 }
