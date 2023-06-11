@@ -86,6 +86,8 @@ public class RegisterView extends Application {
         Scene scene = new Scene(root, 300, 400);
         primaryStage.setScene(scene);
         primaryStage.show();
+
+        primaryStage.setOnCloseRequest(e -> System.exit(0));
     }
 
     public Stage getPrimaryStage() {

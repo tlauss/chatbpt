@@ -69,6 +69,8 @@ public class LoginView extends Application {
         Scene scene = new Scene(root, 300, 250);
         primaryStage.setScene(scene);
         primaryStage.show();
+
+        primaryStage.setOnCloseRequest(e -> System.exit(0));
     }
 
     public void end() {
