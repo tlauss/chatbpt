@@ -30,7 +30,6 @@ public class ChatBPTClient extends Application {
             server = (ServerService) java.rmi.Naming.lookup(serviceUrl);
         } catch (Exception e) {
             System.err.println("Error connecting to server: " + e.getMessage());
-//            System.exit(1);
         }
 
         UnicastRemoteObject.exportObject(clientObserver, 0);

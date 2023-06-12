@@ -135,7 +135,7 @@ public class ChatServer implements ServerService {
     }
 
     @Override
-    public ArrayList<User> getChatRoomUsers(String chatroom) throws RemoteException {
+    public ArrayList<User> getChatroomUsers(String chatroom) throws RemoteException {
         return database.getChatroomUsers(chatroom);
     }
 

@@ -20,7 +20,7 @@ public interface ServerService extends Remote {
     void addMessage(String selectedChat, Message message) throws RemoteException;
     Chatroom getChatroom(String roomName) throws RemoteException;
     ArrayList<Chatroom> getChatrooms() throws RemoteException;
-    ArrayList<User> getChatRoomUsers(String roomName) throws RemoteException;
+    ArrayList<User> getChatroomUsers(String roomName) throws RemoteException;
     ArrayList<Message> getMessages(String chatroom) throws RemoteException;
     void addUserToChatroom(User user, String roomName) throws RemoteException;
     void removeChatroom(Chatroom chatroom) throws RemoteException;

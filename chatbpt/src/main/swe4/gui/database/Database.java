@@ -156,34 +156,38 @@ public class Database implements DatabaseService {
 
     @Override
     public void removeChatroom(Chatroom chatroom) {
-        try (Connection connection = getConnection()) {
-            // Remove banned users from the chatroom
-            try (PreparedStatement deleteBannedUsers = connection.prepareStatement(
-                    "DELETE FROM BannedUser_Chatroom WHERE chatroom_name = ?")) {
-                deleteBannedUsers.setString(1, chatroom.getName());
-                deleteBannedUsers.executeUpdate();
-            }
+        // Remove banned users from the chatroom
+        try (PreparedStatement deleteBannedUsers = connection.prepareStatement(
+                "DELETE FROM BannedUser_Chatroom WHERE chatroom_name = ?")) {
+            deleteBannedUsers.setString(1, chatroom.getName());
+            deleteBannedUsers.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
-            // Remove user-chatroom associations
-            try (PreparedStatement deleteUserChatroom = connection.prepareStatement(
-                    "DELETE FROM User_Chatroom WHERE chatroom_name = ?")) {
-                deleteUserChatroom.setString(1, chatroom.getName());
-                deleteUserChatroom.executeUpdate();
-            }
+        // Remove user-chatroom associations
+        try (PreparedStatement deleteUserChatroom = connection.prepareStatement(
+                "DELETE FROM User_Chatroom WHERE chatroom_name = ?")) {
+            deleteUserChatroom.setString(1, chatroom.getName());
+            deleteUserChatroom.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
-            // Remove messages from the chatroom
-            try (PreparedStatement deleteMessages = connection.prepareStatement(
-                    "DELETE FROM Message WHERE chatroom_name = ?")) {
-                deleteMessages.setString(1, chatroom.getName());
-                deleteMessages.executeUpdate();
-            }
+        // Remove messages from the chatroom
+        try (PreparedStatement deleteMessages = connection.prepareStatement(
+                "DELETE FROM Message WHERE chatroom_name = ?")) {
+            deleteMessages.setString(1, chatroom.getName());
+            deleteMessages.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
-            // Remove the chatroom
-            try (PreparedStatement deleteChatroom = connection.prepareStatement(
-                    "DELETE FROM Chatroom WHERE name = ?")) {
-                deleteChatroom.setString(1, chatroom.getName());
-                deleteChatroom.executeUpdate();
-            }
+        // Remove the chatroom
+        try (PreparedStatement deleteChatroom = connection.prepareStatement(
+                "DELETE FROM Chatroom WHERE name = ?")) {
+            deleteChatroom.setString(1, chatroom.getName());
+            deleteChatroom.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
