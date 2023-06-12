@@ -49,8 +49,8 @@ public class ChatServer implements ServerService {
     }
 
     @Override
-    public void addUser(String username, String shortname, String password) {
-        database.addUser(username, shortname, password);
+    public void addUser(String username, String password, String shortname) {
+        database.addUser(username, password, shortname);
     }
 
     @Override

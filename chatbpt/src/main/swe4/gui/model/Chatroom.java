@@ -38,15 +38,6 @@ public class Chatroom implements Serializable {
         return users;
     }
 
-    public ArrayList<User> getBannedUsers() {
-        return bannedUsers;
-    }
-
-    public boolean isBanned(User user) {
-        return bannedUsers.contains(user);
-    }
-
-
     public User getOwner() {
         return owner;
     }

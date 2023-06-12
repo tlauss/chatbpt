@@ -10,7 +10,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 
 public interface ServerService extends Remote {
-    void addUser(String username, String shortname, String password) throws RemoteException;
+    void addUser(String username, String password, String shortname) throws RemoteException;
     User getUser(String username) throws RemoteException;
     boolean userExists(String user) throws RemoteException;
     boolean passwordCorrect(String user, String password) throws RemoteException;

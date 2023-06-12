@@ -20,7 +20,6 @@ public interface DatabaseService {
     boolean chatroomExists(String chatroom);
     void addUserToChatroom(User user, String chatroom);
     void addMessage(String selectedChat, Message message);
-    void removeUserFromChatroom(User loggedInUser, String chatroom);
     void banUserFromChatroom(User user, String chatroom);
     void unbanUserFromChatroom(User user, String chatroom);
     ArrayList<User> getBannedUsersFromChatroom(String chatroom);

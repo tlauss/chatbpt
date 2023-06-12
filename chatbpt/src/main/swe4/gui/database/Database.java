@@ -233,18 +233,6 @@ public class Database implements DatabaseService {
     }
 
     @Override
-    public void removeUserFromChatroom(User loggedInUser, String chatroom) {
-        try (PreparedStatement statement = getConnection().prepareStatement(
-                "DELETE FROM User_Chatroom WHERE user_id = ? AND chatroom_name = ?")) {
-            statement.setString(1, getUserId(loggedInUser));
-            statement.setString(2, chatroom);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
     public void banUserFromChatroom(User user, String chatroom) {
         try (PreparedStatement statement = getConnection().prepareStatement(
                 "INSERT INTO BannedUser_Chatroom (user_id, chatroom_name) VALUES (?, ?)")) {
