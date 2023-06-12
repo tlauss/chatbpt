@@ -155,11 +155,6 @@ public class ChatServer implements ServerService {
     }
 
     @Override
-    public void removeUser(User username) throws RemoteException {
-        database.removeUser(username);
-    }
-
-    @Override
     public void registerClient(ClientObserver client, User user) throws RemoteException {
         clientObservers.add(client);
         loggedInUsers.add(user);

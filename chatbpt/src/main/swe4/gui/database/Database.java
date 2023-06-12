@@ -101,45 +101,6 @@ public class Database implements DatabaseService {
     }
 
     @Override
-    public void removeUser(User username) {
-        // Remove banned users from the chatroom
-        try (PreparedStatement deleteBannedUsers = connection.prepareStatement(
-                "DELETE FROM BannedUser_Chatroom WHERE user_id = ?")) {
-            deleteBannedUsers.setInt(1, getUserId(username));
-            deleteBannedUsers.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-        // Remove user-chatroom associations
-        try (PreparedStatement deleteUserChatroom = connection.prepareStatement(
-                "DELETE FROM User_Chatroom WHERE user_id = ?")) {
-            deleteUserChatroom.setInt(1, getUserId(username));
-            deleteUserChatroom.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-        // Remove messages from the chatroom
-        try (PreparedStatement deleteMessages = connection.prepareStatement(
-                "DELETE FROM Message WHERE user_id = ?")) {
-            deleteMessages.setInt(1, getUserId(username));
-            deleteMessages.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-        // Remove user
-        try (PreparedStatement deleteUser = connection.prepareStatement(
-                "DELETE FROM User WHERE uid = ?")) {
-            deleteUser.setInt(1, getUserId(username));
-            deleteUser.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
     public ArrayList<Chatroom> getChatrooms() {
         try (Statement statement = getConnection().createStatement()) {
             ArrayList<Chatroom> chatrooms = new ArrayList<>();

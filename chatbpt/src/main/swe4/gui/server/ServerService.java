@@ -14,7 +14,6 @@ public interface ServerService extends Remote {
     User getUser(String username) throws RemoteException;
     boolean userExists(String user) throws RemoteException;
     boolean passwordCorrect(String user, String password) throws RemoteException;
-    void removeUser(User username) throws RemoteException;
     void addChatroom(Chatroom chatroom, String userName) throws RemoteException;
     void updateChatListAndMessageArea(String userName, String chatroomName) throws RemoteException;
     boolean chatroomExists(String roomName) throws RemoteException;
