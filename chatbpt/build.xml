@@ -2,6 +2,7 @@
 
     <!-- Specify your main class here. Omit the .class extension. -->
     <property name="main.class" value="swe4.gui.ChatBPTClient"/>
+    <property name="server.class" value="swe4.gui.server.ChatServer"/>
     <property environment="env"/>
     <property name="jar.name" value="${ant.project.name}.jar"/>
     <property name="src.dir" value="${basedir}/src/main"/>
@@ -67,6 +68,13 @@
             <classpath refid="classpath"/>
             <jvmarg line="--module-path ${javafx.lib.dir}
                           --add-modules=javafx.base,javafx.controls,javafx.media,javafx.fxml"/>
+        </java>
+    </target>
+
+    <target name="run-server" depends="compile,copy-resources"
+            description="Run java application">
+        <java classname="${server.class}" fork="true">
+            <classpath refid="classpath"/>
         </java>
     </target>
 
