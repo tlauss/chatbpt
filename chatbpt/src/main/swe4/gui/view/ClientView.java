@@ -189,7 +189,6 @@ public class ClientView extends Application implements ClientObserver {
                             alert.setHeaderText("Der Chatraum existiert bereits");
                             alert.setContentText("Sie müssen einen anderen Namen für den Chatraum eingeben");
                             alert.showAndWait();
-
                         } else {
                             Chatroom chatroom = new Chatroom(roomName, programController.getLoggedInUser());
                             try {
@@ -227,7 +226,7 @@ public class ClientView extends Application implements ClientObserver {
                         alert.showAndWait();
                     } else {
                         if (programController.getServer().chatroomExists(roomName)) {
-                            if (programController.getServer().getChatRoomUsers(roomName).contains(programController.getLoggedInUser())) {
+                            if (programController.getServer().getChatroomUsers(roomName).contains(programController.getLoggedInUser())) {
                                 Alert alert = new Alert(Alert.AlertType.ERROR);
                                 alert.setTitle("Chatraum beitreten");
                                 alert.setHeaderText("Chatraum beitreten");
@@ -267,14 +266,13 @@ public class ClientView extends Application implements ClientObserver {
                     if (programController.getServer().userExists(userName)) {
                         if (!userName.equals(programController.getLoggedInUser().getName())) {
                             if (!programController.getServer().chatroomExists(
-                                "Privat: "
-                                + programController.getLoggedInUser().getName() +
-                                " und " + userName)
-                            && !programController.getServer().chatroomExists(
-                                "Privat: "
-                                + userName +
-                                " und " + programController.getLoggedInUser().getName()))
-                            {
+                                    "Privat: "
+                                            + programController.getLoggedInUser().getName() +
+                                            " und " + userName)
+                                    && !programController.getServer().chatroomExists(
+                                    "Privat: "
+                                            + userName +
+                                            " und " + programController.getLoggedInUser().getName())) {
                                 String chatroomName = "Privat: " + programController.getLoggedInUser().getName() +
                                         " und " + userName;
                                 Chatroom chatroom = new Chatroom(chatroomName, programController.getLoggedInUser());
@@ -386,26 +384,35 @@ public class ClientView extends Application implements ClientObserver {
                     User userToBan = programController.getServer().getUser(userName);
 
                     if (chatroom.getOwner().equals(programController.getLoggedInUser())) {
-                        boolean userExists = false;
-
-                        for (User user : programController.getServer().getChatRoomUsers(selectedChat)) {
-                            if (user.getName().equals(userName)) {
-                                if (programController.getServer().getBannedUsersFromChatroom(selectedChat).contains(user)) {
-                                    programController.getServer().unbanUserFromChatroom(userToBan, selectedChat);
-                                } else {
-                                    programController.getServer().banUserFromChatroom(userToBan, selectedChat);
-                                }
-                            }
-                            userExists = true;
-                            break;
-                        }
-
-                        if (!userExists) {
+                        if (chatroom.getOwner().equals(programController.getServer().getUser(userName))) {
                             Alert alert = new Alert(Alert.AlertType.ERROR);
                             alert.setTitle("Unban/Ban User");
                             alert.setHeaderText("Unban/Ban User");
-                            alert.setContentText("Der Benutzer existiert nicht");
+                            alert.setContentText("Sie können sich nicht selbst bannen");
+
                             alert.showAndWait();
+                        } else {
+                            boolean userExists = false;
+
+                            for (User user : programController.getServer().getChatroomUsers(selectedChat)) {
+                                if (user.getName().equals(userName)) {
+                                    if (programController.getServer().getBannedUsersFromChatroom(selectedChat).contains(user)) {
+                                        programController.getServer().unbanUserFromChatroom(userToBan, selectedChat);
+                                    } else {
+                                        programController.getServer().banUserFromChatroom(userToBan, selectedChat);
+                                    }
+                                    userExists = true;
+                                    break;
+                                }
+                            }
+
+                            if (!userExists) {
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setTitle("Unban/Ban User");
+                                alert.setHeaderText("Unban/Ban User");
+                                alert.setContentText("Der Benutzer existiert nicht");
+                                alert.showAndWait();
+                            }
                         }
                     } else {
                         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -527,7 +534,7 @@ public class ClientView extends Application implements ClientObserver {
     public void updateMessagesOnNewMessage(Chatroom chatroom, Message message) {
         Platform.runLater(() -> {
             try {
-                if (!programController.getServer().getChatRoomUsers(chatroom.getName()).contains(programController.getLoggedInUser())) {
+                if (!programController.getServer().getChatroomUsers(chatroom.getName()).contains(programController.getLoggedInUser())) {
                     return;
                 }
                 ListView<Message> messageArea = getOrCreateMessageArea(chatroom.getName());
@@ -543,8 +550,12 @@ public class ClientView extends Application implements ClientObserver {
     public void updateChatRoomsOnJoin(Chatroom chatroom, User user) throws RemoteException {
         Platform.runLater(() -> {
             try {
-                if (programController.getServer().getChatRoomUsers(chatroom.getName()).contains(programController.getLoggedInUser())) {
-                    systemMessageList.getItems().add(user.getName() + " ist dem Chatroom " + chatroom.getName() + " beigetreten");
+                if (programController.getServer().getChatroomUsers(chatroom.getName()).contains(programController.getLoggedInUser())) {
+                    if (programController.getLoggedInUser().equals(user)) {
+                        systemMessageList.getItems().add("Du bist dem Chatroom " + chatroom.getName() + " beigetreten");
+                    } else {
+                        systemMessageList.getItems().add(user.getName() + " ist dem Chatroom " + chatroom.getName() + " beigetreten");
+                    }
                     systemMessageList.scrollTo(systemMessageList.getItems().size() - 1);
                 }
             } catch (RemoteException e) {
@@ -557,8 +568,12 @@ public class ClientView extends Application implements ClientObserver {
     public void updateChatroomsOnBan(Chatroom chatroom, User user) throws RemoteException {
         Platform.runLater(() -> {
             try {
-                if (programController.getServer().getChatRoomUsers(chatroom.getName()).contains(programController.getLoggedInUser())) {
-                    systemMessageList.getItems().add(user.getName() + " wurde aus dem Chatroom " + chatroom.getName() + " verbannt");
+                if (programController.getServer().getChatroomUsers(chatroom.getName()).contains(programController.getLoggedInUser())) {
+                    if (programController.getLoggedInUser().equals(user)) {
+                        systemMessageList.getItems().add("Du wurdest aus dem Chatroom " + chatroom.getName() + " verbannt");
+                    } else {
+                        systemMessageList.getItems().add(user.getName() + " wurde aus dem Chatroom " + chatroom.getName() + " verbannt");
+                    }
                     systemMessageList.scrollTo(systemMessageList.getItems().size() - 1);
                 }
             } catch (RemoteException e) {
@@ -571,8 +586,12 @@ public class ClientView extends Application implements ClientObserver {
     public void updateChatroomsOnUnban(Chatroom chatroom, User user) throws RemoteException {
         Platform.runLater(() -> {
             try {
-                if (programController.getServer().getChatRoomUsers(chatroom.getName()).contains(programController.getLoggedInUser())) {
-                    systemMessageList.getItems().add(user.getName() + " wurde im Chatroom " + chatroom.getName() + " entbannt");
+                if (programController.getServer().getChatroomUsers(chatroom.getName()).contains(programController.getLoggedInUser())) {
+                    if (programController.getLoggedInUser().equals(user)) {
+                        systemMessageList.getItems().add("Du wurdest aus dem Chatroom " + chatroom.getName() + " entbannt");
+                    } else {
+                        systemMessageList.getItems().add(user.getName() + " wurde aus dem Chatroom " + chatroom.getName() + " entbannt");
+                    }
                     systemMessageList.scrollTo(systemMessageList.getItems().size() - 1);
                 }
             } catch (RemoteException e) {
