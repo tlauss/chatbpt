@@ -12,6 +12,7 @@ public interface DatabaseService {
     User getUser(int id);
     boolean userExists(String user);
     boolean passwordCorrect(String user, String password);
+    void removeUser(User username);
     ArrayList<Chatroom> getChatrooms();
     void addChatroom(Chatroom chatroom, String user);
     Chatroom getChatroom(String chatroom);
@@ -24,4 +25,5 @@ public interface DatabaseService {
     void unbanUserFromChatroom(User user, String chatroom);
     ArrayList<User> getBannedUsersFromChatroom(String chatroom);
     ArrayList<Message> getMessages(String chatroom);
+
 }

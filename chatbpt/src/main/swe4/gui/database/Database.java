@@ -101,6 +101,45 @@ public class Database implements DatabaseService {
     }
 
     @Override
+    public void removeUser(User username) {
+        // Remove banned users from the chatroom
+        try (PreparedStatement deleteBannedUsers = connection.prepareStatement(
+                "DELETE FROM BannedUser_Chatroom WHERE user_id = ?")) {
+            deleteBannedUsers.setInt(1, getUserId(username));
+            deleteBannedUsers.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Remove user-chatroom associations
+        try (PreparedStatement deleteUserChatroom = connection.prepareStatement(
+                "DELETE FROM User_Chatroom WHERE user_id = ?")) {
+            deleteUserChatroom.setInt(1, getUserId(username));
+            deleteUserChatroom.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Remove messages from the chatroom
+        try (PreparedStatement deleteMessages = connection.prepareStatement(
+                "DELETE FROM Message WHERE user_id = ?")) {
+            deleteMessages.setInt(1, getUserId(username));
+            deleteMessages.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Remove user
+        try (PreparedStatement deleteUser = connection.prepareStatement(
+                "DELETE FROM User WHERE uid = ?")) {
+            deleteUser.setInt(1, getUserId(username));
+            deleteUser.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public ArrayList<Chatroom> getChatrooms() {
         try (Statement statement = getConnection().createStatement()) {
             ArrayList<Chatroom> chatrooms = new ArrayList<>();
@@ -128,7 +167,7 @@ public class Database implements DatabaseService {
         try (PreparedStatement statement = getConnection().prepareStatement(
                 "INSERT INTO Chatroom (name, owner_id) VALUES (?, ?)")) {
             statement.setString(1, chatroom.getName());
-            statement.setString(2, getUserId(getUser(user)));
+            statement.setInt(2, getUserId(getUser(user)));
             statement.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -210,7 +249,7 @@ public class Database implements DatabaseService {
     public void addUserToChatroom(User user, String chatroom) {
         try (PreparedStatement statement = getConnection().prepareStatement(
                 "INSERT INTO User_Chatroom (user_id, chatroom_name) VALUES (?, ?)")) {
-            statement.setString(1, getUserId(user));
+            statement.setInt(1, getUserId(user));
             statement.setString(2, chatroom);
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -222,7 +261,7 @@ public class Database implements DatabaseService {
     public void addMessage(String selectedChat, Message message) {
         try (PreparedStatement statement = getConnection().prepareStatement(
                 "INSERT INTO Message (user_id, chatroom_name, text, timestamp) VALUES (?, ?, ?, ?)")) {
-            statement.setString(1, getUserId(message.getSender()));
+            statement.setInt(1, getUserId(message.getSender()));
             statement.setString(2, selectedChat);
             statement.setString(3, message.getText());
             statement.setTimestamp(4, message.getTimestamp());
@@ -236,7 +275,7 @@ public class Database implements DatabaseService {
     public void banUserFromChatroom(User user, String chatroom) {
         try (PreparedStatement statement = getConnection().prepareStatement(
                 "INSERT INTO BannedUser_Chatroom (user_id, chatroom_name) VALUES (?, ?)")) {
-            statement.setString(1, getUserId(user));
+            statement.setInt(1, getUserId(user));
             statement.setString(2, chatroom);
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -248,7 +287,7 @@ public class Database implements DatabaseService {
     public void unbanUserFromChatroom(User user, String chatroom) {
         try (PreparedStatement statement = getConnection().prepareStatement(
                 "DELETE FROM BannedUser_Chatroom WHERE user_id = ? AND chatroom_name = ?")) {
-            statement.setString(1, getUserId(user));
+            statement.setInt(1, getUserId(user));
             statement.setString(2, chatroom);
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -286,15 +325,15 @@ public class Database implements DatabaseService {
         }
     }
 
-    private String getUserId(User user) {
+    private int getUserId(User user) {
         try (PreparedStatement statement = getConnection().prepareStatement(
                 "SELECT * FROM User WHERE name = ?")) {
             statement.setString(1, user.getName());
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
-                return resultSet.getString("uid");
+                return resultSet.getInt("uid");
             } else {
-                return null;
+                return -1;
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
